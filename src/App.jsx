@@ -1,8 +1,17 @@
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Route, Routes, useLocation } from "react-router-dom";
+import { useAuth } from "./context/AuthContext.jsx";
+import BookingPage from "./pages/BookingPage.jsx";
 import BookDetailPage from "./pages/BookDetailPage.jsx";
 import CatalogPage from "./pages/CatalogPage.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
+import ReadingListPage from "./pages/ReadingListPage.jsx";
+import RegisterPage from "./pages/RegisterPage.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 export default function App() {
+  const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
+
   return (
     <div className="app-shell">
       <header className="site-header">
@@ -18,11 +27,34 @@ export default function App() {
           <span className="status-dot" aria-hidden="true" />
           Your neighborhood reading room
         </span>
+        <nav className="main-nav" aria-label="Main navigation">
+          <Link to="/">Catalog</Link>
+          <Link to="/reading-list">Reading list</Link>
+          {isAuthenticated ? (
+            <>
+              <Link to="/booking">Book a space</Link>
+              {user?.name && <span className="nav-user">Hello, {user.name}</span>}
+            </>
+          ) : (
+            <Link to="/login" state={{ from: location }}>Sign in</Link>
+          )}
+        </nav>
       </header>
       <main>
         <Routes>
           <Route path="/" element={<CatalogPage />} />
           <Route path="/books/:id" element={<BookDetailPage />} />
+          <Route path="/reading-list" element={<ReadingListPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/booking"
+            element={
+              <ProtectedRoute>
+                <BookingPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
