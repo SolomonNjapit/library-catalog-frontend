@@ -13,6 +13,14 @@ export default defineConfig({
         target: "http://localhost:3000",
         changeOrigin: true,
       },
+      "/api/borrow-requests": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+      "/api/bookings": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { api } from "../lib/api.js";
 
 const spaces = ["Reading Room", "Quiet Study", "Community Table"];
 
@@ -15,8 +16,9 @@ export default function BookingForm() {
   const [endTime, setEndTime] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setConfirmation("");
     setError("");
@@ -24,12 +26,20 @@ export default function BookingForm() {
       setError("End time must be later than start time.");
       return;
     }
-    setConfirmation(`Your ${space} request for ${date}, ${startTime}–${endTime} is ready.`);
+    setSubmitting(true);
+    try {
+      await api.post("/bookings", { space, date, startTime, endTime });
+      setConfirmation(`Your ${space} booking for ${date}, ${startTime}–${endTime} is confirmed.`);
+    } catch (requestError) {
+      setError(requestError.message || "Your booking could not be created.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <form className="form-card booking-form" onSubmit={handleSubmit}>
-      <p className="form-note">Choose a space and time. Booking requests will be enabled soon.</p>
+      <p className="form-note">Submit your space and time; the server will reject overlapping bookings.</p>
       {error && <p className="form-feedback form-error" role="alert">{error}</p>}
       {confirmation && <p className="form-feedback form-success" role="status">{confirmation}</p>}
       <label htmlFor="booking-space">Space</label>
@@ -49,7 +59,7 @@ export default function BookingForm() {
           <input id="booking-end" type="time" required value={endTime} onChange={(event) => setEndTime(event.target.value)} />
         </div>
       </div>
-      <button className="primary-button" type="submit">Review request</button>
+      <button className="primary-button" type="submit" disabled={submitting}>{submitting ? "Sending request..." : "Request booking"}</button>
     </form>
   );
 }

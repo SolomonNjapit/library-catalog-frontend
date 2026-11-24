@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
+import { api } from "../lib/api.js";
 
 export default function BookDetailPage() {
   const { id } = useParams();
@@ -21,12 +20,9 @@ export default function BookDetailPage() {
       setLoading(true);
       setError("");
       try {
-        const response = await fetch(`${API_BASE_URL}/books/${encodeURIComponent(id)}`, {
+        const payload = await api.get(`/books/${encodeURIComponent(id)}`, {
           signal: controller.signal,
         });
-        if (response.status === 404) throw new Error("This book could not be found.");
-        if (!response.ok) throw new Error(`Book request failed (${response.status})`);
-        const payload = await response.json();
         setBook(payload.book ?? payload.data ?? payload);
       } catch (requestError) {
         if (requestError.name !== "AbortError") {

@@ -1,28 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { api } from "../lib/api.js";
 
 export const AuthContext = createContext(null);
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
-const TOKEN_KEY = "fieldnotes-auth-token";
-
-async function readResponse(response) {
-  const text = await response.text();
-  let payload = {};
-  if (text) {
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      payload = { message: text };
-    }
-  }
-  if (!response.ok) {
-    const details = Array.isArray(payload.errors)
-      ? payload.errors.map((item) => item.message).filter(Boolean).join(" ")
-      : "";
-    throw new Error(payload.message ?? details ?? `Request failed (${response.status})`);
-  }
-  return payload;
-}
 
 function getUser(payload) {
   const user = payload.user ?? payload.data?.user;
@@ -37,13 +16,7 @@ export function AuthProvider({ children }) {
   const [status, setStatus] = useState("loading");
 
   const loadProfile = useCallback(async () => {
-    const token = window.sessionStorage.getItem(TOKEN_KEY);
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const response = await fetch(`${API_BASE_URL}/users/profile`, {
-      credentials: "include",
-      headers,
-    });
-    const payload = await readResponse(response);
+    const payload = await api.get("/users/profile");
     const profile = getUser(payload);
     if (!profile) throw new Error("The profile response did not include a user.");
     setUser(profile);
@@ -53,12 +26,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let active = true;
-    const token = window.sessionStorage.getItem(TOKEN_KEY);
-    fetch(`${API_BASE_URL}/users/profile`, {
-      credentials: "include",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then(readResponse)
+    api.get("/users/profile")
       .then((payload) => {
         if (!active) return;
         const profile = getUser(payload);
@@ -76,16 +44,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const authenticate = useCallback(async (endpoint, credentials) => {
-    const response = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
-    });
-    const payload = await readResponse(response);
-    const token = payload.token ?? payload.accessToken ?? payload.data?.token ?? payload.data?.accessToken;
-    if (token) window.sessionStorage.setItem(TOKEN_KEY, token);
-
+    const payload = await api.post(`/auth/${endpoint}`, credentials);
     let authenticatedUser = getUser(payload);
     if (!authenticatedUser) authenticatedUser = await loadProfile();
     else {
@@ -97,10 +56,18 @@ export function AuthProvider({ children }) {
 
   const login = useCallback((credentials) => authenticate("login", credentials), [authenticate]);
   const register = useCallback((credentials) => authenticate("register", credentials), [authenticate]);
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/auth/logout", {});
+    } finally {
+      setUser(null);
+      setStatus("unauthenticated");
+    }
+  }, []);
 
   const value = useMemo(
-    () => ({ user, status, isAuthenticated: status === "authenticated", login, register }),
-    [user, status, login, register],
+    () => ({ user, status, isAuthenticated: status === "authenticated", login, register, logout }),
+    [user, status, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

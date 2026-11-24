@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import BookingPage from "./pages/BookingPage.jsx";
@@ -7,10 +8,23 @@ import LoginPage from "./pages/LoginPage.jsx";
 import ReadingListPage from "./pages/ReadingListPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import AdminBooksPage from "./pages/admin/AdminBooksPage.jsx";
+import AdminBorrowRequestsPage from "./pages/admin/AdminBorrowRequestsPage.jsx";
+import AdminBookingsPage from "./pages/admin/AdminBookingsPage.jsx";
 
 export default function App() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const location = useLocation();
+  const [logoutError, setLogoutError] = useState("");
+
+  async function handleLogout() {
+    setLogoutError("");
+    try {
+      await logout();
+    } catch (error) {
+      setLogoutError(error.message || "Could not sign out cleanly.");
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -33,13 +47,22 @@ export default function App() {
           {isAuthenticated ? (
             <>
               <Link to="/booking">Book a space</Link>
-              {user?.name && <span className="nav-user">Hello, {user.name}</span>}
+              {user?.role === "librarian" && (
+                <div className="admin-nav">
+                  <Link to="/admin/books">Books admin</Link>
+                  <Link to="/admin/borrow-requests">Borrow requests</Link>
+                  <Link to="/admin/bookings">Bookings</Link>
+                </div>
+              )}
+              {(user?.username || user?.name) && <span className="nav-user">Hello, {user.username ?? user.name}</span>}
+              <button type="button" className="nav-button" onClick={handleLogout}>Sign out</button>
             </>
           ) : (
             <Link to="/login" state={{ from: location }}>Sign in</Link>
           )}
         </nav>
       </header>
+      {logoutError && <p className="form-feedback form-error header-feedback" role="alert">{logoutError}</p>}
       <main>
         <Routes>
           <Route path="/" element={<CatalogPage />} />
@@ -55,6 +78,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/admin/books" element={<ProtectedRoute requiredRole="librarian"><AdminBooksPage /></ProtectedRoute>} />
+          <Route path="/admin/borrow-requests" element={<ProtectedRoute requiredRole="librarian"><AdminBorrowRequestsPage /></ProtectedRoute>} />
+          <Route path="/admin/bookings" element={<ProtectedRoute requiredRole="librarian"><AdminBookingsPage /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

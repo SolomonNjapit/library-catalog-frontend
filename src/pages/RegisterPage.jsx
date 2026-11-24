@@ -6,7 +6,7 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,7 +17,7 @@ export default function RegisterPage() {
     setError("");
     setSubmitting(true);
     try {
-      await register({ name, email, password });
+      await register({ username, email, password });
       navigate(location.state?.from?.pathname ?? "/booking", { replace: true });
     } catch (requestError) {
       setError(requestError.message || "We couldn't create your account. Please try again.");
@@ -33,8 +33,8 @@ export default function RegisterPage() {
       <p className="auth-intro">Create an account to save your reading list and plan a visit.</p>
       <form className="form-card" onSubmit={handleSubmit}>
         {error && <p className="form-feedback form-error" role="alert">{error}</p>}
-        <label htmlFor="register-name">Name</label>
-        <input id="register-name" name="name" autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} />
+        <label htmlFor="register-username">Username</label>
+        <input id="register-username" name="username" autoComplete="username" minLength={3} required value={username} onChange={(event) => setUsername(event.target.value)} />
         <label htmlFor="register-email">Email</label>
         <input id="register-email" name="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
         <label htmlFor="register-password">Password</label>

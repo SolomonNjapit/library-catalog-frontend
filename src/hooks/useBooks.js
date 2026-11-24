@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
+import { api } from "../lib/api.js";
 
 export default function useBooks({ search, genre, page = 1 }) {
   const [books, setBooks] = useState([]);
@@ -20,11 +19,8 @@ export default function useBooks({ search, genre, page = 1 }) {
       if (page) params.set("page", String(page));
 
       try {
-        const response = await fetch(`${API_BASE_URL}/books${params.size ? `?${params}` : ""}`, {
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error(`Catalog request failed (${response.status})`);
-        const payload = await response.json();
+        const query = params.size ? `?${params}` : "";
+        const payload = await api.get(`/books${query}`, { signal: controller.signal });
         const items = Array.isArray(payload)
           ? payload
           : payload.books ?? payload.data ?? payload.items ?? payload.results ?? [];

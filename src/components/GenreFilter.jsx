@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
+import { api } from "../lib/api.js";
 
 export default function GenreFilter({ value, onChange }) {
   const [genres, setGenres] = useState([]);
@@ -14,9 +13,7 @@ export default function GenreFilter({ value, onChange }) {
       setLoading(true);
       setError("");
       try {
-        const response = await fetch(`${API_BASE_URL}/genres`, { signal: controller.signal });
-        if (!response.ok) throw new Error(`Genre request failed (${response.status})`);
-        const payload = await response.json();
+        const payload = await api.get("/genres", { signal: controller.signal });
         const items = Array.isArray(payload)
           ? payload
           : payload.genres ?? payload.data ?? payload.items ?? [];

@@ -5,7 +5,7 @@ export default function BookingPage() {
     <section className="auth-page booking-page">
       <span className="eyebrow">Plan your visit</span>
       <h1>Save a seat.</h1>
-      <p className="auth-intro">Choose a space and a time that works for you.</p>
+      <p className="auth-intro">Choose a space and time. The server will check for schedule conflicts.</p>
       <BookingForm />
     </section>
   );
